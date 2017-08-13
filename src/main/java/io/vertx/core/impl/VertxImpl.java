@@ -652,6 +652,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     context.executeBlocking(action, resultHandler);
   }
 
+  // 执行阻塞任务也需要丢到Context，只不过阻塞任务要丢到线程池中，而非阻塞任务在EventLoop线程上（Context上有Worker Pool专门用来执行阻塞任务）。
+  // 如果order为false，则直接submit给executor；如果order为true，则扔到一个队列中，按序消费。
   @Override
   public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered,
                                   Handler<AsyncResult<T>> asyncResultHandler) {
