@@ -2,10 +2,12 @@ package examples;
 
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 
 public class NonBlockingExample {
   public static void main(String[] args) {
-    Vertx vertx = Vertx.vertx();
+    VertxOptions opts = new VertxOptions();
+    Vertx vertx = Vertx.vertx(opts);
 
     // Context和Handler是Vert.x中最核心的两个类。
     // Handler 是事件处理器

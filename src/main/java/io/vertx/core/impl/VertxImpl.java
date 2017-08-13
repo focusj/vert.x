@@ -149,21 +149,28 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       log.warn("You're already on a Vert.x context, are you sure you want to create a new Vertx instance?");
     }
     closeHooks = new CloseHooks(log);
+    // EventLoop 线程阻塞检测，默认如果一个时间处理超过2s则会打印出一条warning log。
     checker = new BlockedThreadChecker(options.getBlockedThreadCheckInterval(), options.getWarningExceptionTime());
     eventLoopThreadFactory = new VertxThreadFactory("vert.x-eventloop-thread-", checker, false, options.getMaxEventLoopExecuteTime());
+    // 创建EventLoop线程组（Netty中的实现），默认大小是2倍的处理器数量。
     eventLoopGroup = new NioEventLoopGroup(options.getEventLoopPoolSize(), eventLoopThreadFactory);
+    // CPU和IO处理时间的比例，默认5/5开。
     eventLoopGroup.setIoRatio(NETTY_IO_RATIO);
+
     ThreadFactory acceptorEventLoopThreadFactory = new VertxThreadFactory("vert.x-acceptor-thread-", checker, false, options.getMaxEventLoopExecuteTime());
     // The acceptor event loop thread needs to be from a different pool otherwise can get lags in accepted connections
     // under a lot of load
+    // 处理连接请求的EventLoopGroup，比如启动一个HttpServer时，则会用到它。这个EventLoop处理的100%都是IO任务。
     acceptorEventLoopGroup = new NioEventLoopGroup(1, acceptorEventLoopThreadFactory);
     acceptorEventLoopGroup.setIoRatio(100);
 
     metrics = initialiseMetrics(options);
 
+    // 用于处理用户阻塞任务的线程池。
     ExecutorService workerExec = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
         new VertxThreadFactory("vert.x-worker-thread-", checker, true, options.getMaxWorkerExecuteTime()));
     PoolMetrics workerPoolMetrics = isMetricsEnabled() ? metrics.createMetrics(workerExec, "worker", "vert.x-worker-thread", options.getWorkerPoolSize()) : null;
+    // 用于处理Vert.x内部阻塞任务
     ExecutorService internalBlockingExec = Executors.newFixedThreadPool(options.getInternalBlockingPoolSize(),
         new VertxThreadFactory("vert.x-internal-blocking-", checker, true, options.getMaxWorkerExecuteTime()));
     PoolMetrics internalBlockingPoolMetrics = isMetricsEnabled() ? metrics.createMetrics(internalBlockingExec, "worker", "vert.x-internal-blocking", options.getInternalBlockingPoolSize()) : null;
