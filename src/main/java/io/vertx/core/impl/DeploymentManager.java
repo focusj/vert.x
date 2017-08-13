@@ -77,6 +77,9 @@ public class DeploymentManager {
     if (options.getIsolatedClasses() != null) {
       throw new IllegalArgumentException("Can't specify isolatedClasses for already created verticle");
     }
+    // 创建或获取当前Context，一个Verticle创建时会和一个Context绑定。
+    // Verticle有三种：Standard，Worker，Multi-Threaded。
+    // 不同Verticle绑定的Context是不一样的，分别是：EventLoopContext，WorkerContext，Multi-ThreadedContext。
     ContextImpl currentContext = vertx.getOrCreateContext();
     doDeploy("java:" + verticle.getClass().getName(), generateDeploymentID(), options, currentContext, currentContext, completionHandler,
         getCurrentClassLoader(), verticle);
@@ -414,12 +417,13 @@ public class DeploymentManager {
 
     Deployment parent = parentContext.getDeployment();
     DeploymentImpl deployment = new DeploymentImpl(parent, deploymentID, identifier, options);
-    
+
     AtomicInteger deployCount = new AtomicInteger();
     AtomicBoolean failureReported = new AtomicBoolean();
     for (Verticle verticle: verticles) {
       WorkerExecutorImpl workerExec = poolName != null ? vertx.createSharedWorkerExecutor(poolName, options.getWorkerPoolSize()) : null;
       WorkerPool pool = workerExec != null ? workerExec.getPool() : null;
+
       ContextImpl context = options.isWorker() ? vertx.createWorkerContext(options.isMultiThreaded(), deploymentID, pool, conf, tccl) :
         vertx.createEventLoopContext(deploymentID, pool, conf, tccl);
       if (workerExec != null) {
