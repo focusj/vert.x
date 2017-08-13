@@ -329,6 +329,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return acceptorEventLoopGroup;
   }
 
+  // 获取Context的逻辑是这样的:
+  // 判断当前线程是不是VertxThread，
+  // 如果是，则拿当前线程上绑定的Context。
+  // 如果不是，则创建一个新的Context。这个Context是EventLoopContext
+  //
+  // Context有三个继承类：
+  //    EventLoopContext：
+  //    WorkerContext：
+  //    MultiThreadedWorkerContext：
   public ContextImpl getOrCreateContext() {
     ContextImpl ctx = getContext();
     if (ctx == null) {

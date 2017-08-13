@@ -196,6 +196,7 @@ public abstract class ContextImpl implements ContextInternal {
   protected abstract void checkCorrectThread();
 
   // Run the task asynchronously on this same context
+  // 如果Context是EventLoopContext，则task会被包装成Runnable 提交到Netty的EventLoop中执行。
   @Override
   public void runOnContext(Handler<Void> task) {
     try {
