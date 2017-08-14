@@ -140,6 +140,10 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
     super.finalize();
   }
 
+  // credits起到了MessageProducer和MessageConsumer之间的沟通作用。Producer发布一条消息，credit相应 -1，
+  // 当credit消耗完之后，Producer产生的新消息不会直接发送到Consumer，而是先放到pending队列中。pending使用的是ArrayDeque
+  // 一个无限容量的双端队列。(best effort delivery)
+  // 当Consumer消费消息时，如果消息的header中有CreditAddress，则会发送向该地址发送一条增加credit的消息。
   private synchronized <R> void doSend(T data, Handler<AsyncResult<Message<R>>> replyHandler) {
     if (credits > 0) {
       credits--;
@@ -153,6 +157,11 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
     }
   }
 
+  // 处理credit逻辑。MessageProducer初始化的时候会生成一个credit address，通过这个MessageProducer发出的消息消息头中
+  // 都会附带这个地址（creditAddress）。
+  // Consumer消费消息时会通知Producer恢复credit。
+  // 该方法中有一个while循环，如果credit > 0 的话Producer会尽力发送尽可能多的消息，直到把credit消费完或者pending队列中没有积压。
+  // 后半部分逻辑是如果：credit > maxSize / 2 则触发执行drainHandler，producer不再拥堵。
   private synchronized void doReceiveCredit(int credit) {
     credits += credit;
     while (credits > 0) {
