@@ -242,6 +242,8 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     this.discardHandler = handler;
   }
 
+  // consumer handler需注册到event bus中，event bus中有一个Map来存储address 和 consumer handlers之间的关系。
+  // producer 发送消息时会从该map中拿到address对应的handlers。
   @Override
   public synchronized MessageConsumer<T> handler(Handler<Message<T>> handler) {
     this.handler = handler;

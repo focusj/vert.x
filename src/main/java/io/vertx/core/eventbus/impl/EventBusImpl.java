@@ -270,6 +270,8 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     }
     handlers.list.add(holder);
 
+    // 把当前registration放到Context的close Hook中，当context关闭是，自动unregister。
+    // HandlerEntry集成了Closable接口，并实现了close方法：handler.unregister(completionHandler);
     if (hasContext) {
       HandlerEntry entry = new HandlerEntry<>(address, registration);
       context.addCloseHook(entry);
@@ -372,6 +374,9 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     return true;
   }
 
+  // EventBus会把address以及对应的Handlers(1 - 多 关系)存储到ConcurrentHashMap<String, Handlers>中。
+  // Handlers内部实现了不严格的Round-Robin算法，如果是send消息，则会选取一个Handler处理该条消息。
+  // 如果利用EventBus处理耗时的任务，则可以在一个Address上注册多个Handler，能够大致实现：Master-Slave模式。
   protected <T> boolean deliverMessageLocally(MessageImpl msg) {
     msg.setBus(this);
     Handlers handlers = handlerMap.get(msg.address());
@@ -427,6 +432,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   private <T> void sendOrPubInternal(MessageImpl message, DeliveryOptions options,
                                      Handler<AsyncResult<Message<T>>> replyHandler) {
     checkStarted();
+    // 创建ReplyHandlerRegistration，如果没有replyHandler则返回null。
     HandlerRegistration<T> replyHandlerRegistration = createReplyHandlerRegistration(message, options, replyHandler);
     SendContextImpl<T> sendContext = new SendContextImpl<>(message, options, replyHandlerRegistration);
     sendContext.next();
