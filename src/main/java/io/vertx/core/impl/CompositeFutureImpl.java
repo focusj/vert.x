@@ -30,6 +30,7 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
 
   private static final Handler<AsyncResult<CompositeFuture>> NO_HANDLER = c -> {};
 
+  //
   public static CompositeFuture all(Future<?>... results) {
     CompositeFutureImpl composite = new CompositeFutureImpl(results);
     int len = results.length;
@@ -37,13 +38,17 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
       results[i].setHandler(ar -> {
         Handler<AsyncResult<CompositeFuture>> handler = null;
         if (ar.succeeded()) {
+          // 更新composite状态的时候需要加锁，因为多个Future在并发的执行。
           synchronized (composite) {
             composite.count++;
+            // 只有所有的Future都成功，时才能标记Future成功。
+            // count记录的是目前成功的Future数
             if (!composite.isComplete() && composite.count == len) {
               handler = composite.setCompleted(null);
             }
           }
         } else {
+          // 如果future failed则标记当前composite future失败，但是这个失败并不能cancel 还未执行的Future。
           synchronized (composite) {
             if (!composite.isComplete()) {
               handler = composite.setCompleted(ar.cause());
