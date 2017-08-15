@@ -13,8 +13,8 @@ public class DeployVerticle {
     // 这种部署方式有一些弊端：
     //    1. 不支持多实例部署
     //    2. 不支持Isolation Group
-    DeploymentOptions opts = new DeploymentOptions().setWorker(true);
-    vertx.deployVerticle(new ExampleVerticle(), opts);
+    // DeploymentOptions opts = new DeploymentOptions().setWorker(true);
+    // vertx.deployVerticle(new ExampleVerticle(), opts);
 
     // 反射部署
     vertx.deployVerticle(ExampleVerticle.class.getName());

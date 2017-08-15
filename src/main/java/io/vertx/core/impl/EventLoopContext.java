@@ -35,6 +35,7 @@ public class EventLoopContext extends ContextImpl {
 
   public void executeAsync(Handler<Void> task) {
     // No metrics, we are on the event loop.
+    // 进入Netty SingleThreadEventExecutor
     nettyEventLoop().execute(wrapTask(null, task, true, null));
   }
 
@@ -57,5 +58,5 @@ public class EventLoopContext extends ContextImpl {
       throw new IllegalStateException("Event delivered on unexpected thread " + current + " expected: " + contextThread);
     }
   }
-  
+
 }

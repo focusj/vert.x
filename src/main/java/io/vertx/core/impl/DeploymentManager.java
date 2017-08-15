@@ -433,6 +433,8 @@ public class DeploymentManager {
       }
       context.setDeployment(deployment);
       deployment.addVerticle(new VerticleHolder(verticle, context));
+      // verticle的创建过程是在EventLoop线程上执行的
+      // 如果当前Context绑定EventLoop线程还没有启动过，则这段逻辑调用也会触发EventLoop的启动逻辑。
       context.runOnContext(v -> {
         try {
           verticle.init(vertx, context);
