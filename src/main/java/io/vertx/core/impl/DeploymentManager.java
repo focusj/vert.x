@@ -424,6 +424,8 @@ public class DeploymentManager {
       WorkerExecutorImpl workerExec = poolName != null ? vertx.createSharedWorkerExecutor(poolName, options.getWorkerPoolSize()) : null;
       WorkerPool pool = workerExec != null ? workerExec.getPool() : null;
 
+      // 如果WorkerVerticle的话，这创建的是WorkerContext。如果worker pool是null的话，该verticle会使用vertx实例的worker pool。
+      // 所以，在一个vertx实例中executing blocking和worker verticle实际干活的线程池是一个。
       ContextImpl context = options.isWorker() ? vertx.createWorkerContext(options.isMultiThreaded(), deploymentID, pool, conf, tccl) :
         vertx.createEventLoopContext(deploymentID, pool, conf, tccl);
       if (workerExec != null) {
